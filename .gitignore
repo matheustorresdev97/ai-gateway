@@ -1,0 +1,24 @@
+# Chaves e segredos: NUNCA vão para o GitHub
+.env
+.env.*
+!.env.example
+07-governanca/chaves_geradas.json
+
+# Ambiente virtual e cache do Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editores e sistema operacional
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
