@@ -47,7 +47,7 @@ Mais do que a ferramenta, os exemplos demonstram decisões de arquitetura:
 ## 1. Preparar (uma vez)
 
 ```bash
-cd ~/"Área de trabalho/exemplos-ai-gateway"
+cd ~/"Área de trabalho/ai-gateway"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
