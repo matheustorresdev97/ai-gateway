@@ -1,0 +1,55 @@
+# Nota AI Gateways → "LiteLLM Proxy e Router" + "Expondo capacidades, não modelos físicos"
+#
+# A aplicação pede uma CAPACIDADE (nome lógico), não um provider.
+#
+#   CAPACIDADE INTERNA   →   MAPEAMENTO (este arquivo)   →   PROVIDER FÍSICO
+#
+# - model_name  = MODEL GROUP: o nome lógico que a aplicação enxerga
+# - cada item   = DEPLOYMENT: configuração concreta que aponta para um modelo real
+# - o ROUTER decide qual deployment do grupo atende cada requisição
+#
+# MODELO_PRINCIPAL / MODELO_SECUNDARIO são definidos pelo iniciar_proxy.sh:
+#   com ChatGPT e Gemini no .env → principal = ChatGPT, secundário = Gemini
+#   com só um deles              → os dois apontam para o mesmo provedor
+#
+# Política de nomes (nota): o nome representa o USO esperado. Se o provedor
+# mudar, troque o mapeamento aqui; os nomes (e a aplicação) continuam iguais.
+
+model_list:
+  # --- classificador simples: classifica intenção em categorias ---
+  - model_name: classificador-simples
+    litellm_params:
+      model: os.environ/MODELO_SECUNDARIO
+      api_key: os.environ/CHAVE_SECUNDARIO
+
+  # --- resposta suporte: responde dúvidas frequentes de clientes ---
+  # Dois deployments no MESMO grupo: o router escolhe um a cada requisição.
+  - model_name: resposta-suporte
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+  - model_name: resposta-suporte
+    litellm_params:
+      model: os.environ/MODELO_SECUNDARIO
+      api_key: os.environ/CHAVE_SECUNDARIO
+
+  # --- extração de documento: extrai campos e dados de documentos ---
+  - model_name: extracao-documento
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+
+  # --- análise profunda: análises complexas e raciocínio detalhado ---
+  - model_name: analise-profunda
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+
+router_settings:
+  routing_strategy: simple-shuffle   # como o router escolhe o deployment do grupo
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
