@@ -1,6 +1,6 @@
 # Exemplos — AI Gateways
 
-Exemplos práticos da nota **AI Gateways**.
+Exemplos práticos das notas **AI Gateways** e **Fluxos de Chamada**.
 
 Cada pasta é um degrau da **"Evolução do módulo de integração com IA"**, do simples ao robusto:
 
@@ -8,6 +8,8 @@ Cada pasta é um degrau da **"Evolução do módulo de integração com IA"**, d
 01 sem SDK ─► 02 SDK direto ─► 03 LiteLLM (SDK) ─► 04 LiteLLM Proxy ─► 05 capacidades ─► 06 resiliência ─► 07 governança
    HTTP puro     acoplado         compatibilidade      gateway             router            timeout/retry       virtual keys,
                  ao provedor      (1 API, N modelos)   (serviço separado)  nomes lógicos     fallback            limites, custo, logs
+
+08 fluxos de chamada: com o gateway pronto, COMO executar cada chamada (síncrono, streaming ou job assíncrono)
 ```
 
 | Pasta | Seção da nota | O que você vê | Provedor |
@@ -19,6 +21,7 @@ Cada pasta é um degrau da **"Evolução do módulo de integração com IA"**, d
 | `05-capacidades` | Router / Expondo capacidades, não modelos físicos | A aplicação pede `resposta-suporte`, o gateway escolhe o modelo | ChatGPT e/ou Gemini |
 | `06-resiliencia` | Resiliência: timeout, retry e fallback | Provedor lento e provedor fora do ar, e o gateway contornando | ChatGPT e/ou Gemini |
 | `07-governanca` | Virtual Key / Rate limiting & cost control / Governança mínima | App A, B e C com acessos, limites e gastos diferentes | ChatGPT e/ou Gemini |
+| `08-fluxos-de-chamada` | Nota **Fluxos de Chamada**: síncrono, streaming e job assíncrono | Timeout de request longa, TTFT do streaming vs. síncrono, fila + worker + retry + DLQ | ChatGPT e/ou Gemini |
 
 ## O que é um AI Gateway
 
@@ -42,7 +45,7 @@ Mais do que a ferramenta, os exemplos demonstram decisões de arquitetura:
 - **Retry tem custo:** cada tentativa acrescenta latência e gasto, além de pressionar um provedor que já está com problemas.
 - **O gateway não decide os limites sozinho:** os números vêm de produto, finanças e risco.
 
-**Todas as chamadas são reais.** As pastas 01 e 02 precisam da chave do ChatGPT. As pastas 03 a 07 funcionam com a chave do **ChatGPT, do Gemini ou das duas**.
+**Todas as chamadas são reais.** As pastas 01 e 02 precisam da chave do ChatGPT. As pastas 03 a 08 funcionam com a chave do **ChatGPT, do Gemini ou das duas**.
 
 ## 1. Preparar (uma vez)
 
@@ -69,7 +72,7 @@ LITELLM_MASTER_KEY=sk-mestre-troque-isto   # você inventa; é a chave de admin 
 
 Deixe `COLE_...` no provedor que não for usar.
 
-**Como os gateways (04 a 07) usam as chaves:** o script de início define um modelo **principal** e um **secundário** e mostra o mapeamento ao subir.
+**Como os gateways (04 a 08) usam as chaves:** o script de início define um modelo **principal** e um **secundário** e mostra o mapeamento ao subir.
 
 | Chaves no `.env` | Principal | Secundário |
 |---|---|---|
@@ -105,6 +108,9 @@ A pasta 07 precisa de **Docker** (gateway + banco Postgres para guardar keys, ga
 - O **fallback** entrando em ação quando o provedor principal estoura o timeout ou fica fora do ar, e o tempo que o **retry** acrescenta.
 - **Virtual keys** bloqueando acesso a modelos caros (HTTP 403) e estourando limite de requisições (HTTP 429).
 - Um **log por chamada** com aplicação, capacidade, modelo físico, status, tokens e custo.
+- Uma chamada **síncrona longa** estourando o timeout, enquanto a curta volta rápido.
+- O **streaming** mostrando texto em menos de um segundo, com tempo total parecido ao síncrono.
+- **Jobs** respondendo na hora, sendo processados em background, com retry, DLQ e pedido duplicado ignorado.
 
 ## Tecnologias
 

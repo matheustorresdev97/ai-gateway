@@ -1,0 +1,38 @@
+# Nota Fluxos de Chamada → "Decisão: síncrono, streaming ou fila?"
+#
+# O gateway expõe uma capacidade por TIPO DE FLUXO. As três apontam para o
+# mesmo modelo real (o principal do .env); o que muda é a política de timeout,
+# que acompanha a estratégia de execução:
+#
+#   | capacidade    | fluxo          | timeout no gateway |
+#   | classificacao | síncrono       | curto  (30s)       |
+#   | explicacao    | streaming      | médio  (120s)      |
+#   | analise       | job assíncrono | longo  (300s)      |
+#
+# Num cenário real, cada capacidade poderia usar um modelo diferente
+# (ex.: modelo pequeno e rápido para classificação).
+
+model_list:
+  - model_name: classificacao
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 30
+
+  - model_name: explicacao
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 120
+
+  - model_name: analise
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 300
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
