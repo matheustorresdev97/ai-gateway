@@ -1,0 +1,29 @@
+# Nota AI Gateways → "LiteLLM como Proxy"
+#
+# O proxy é um SERVIÇO SEPARADO. Ele concentra o que, no modo SDK (pasta 03),
+# ficava espalhado em cada aplicação:
+#   - esconde as chaves reais (ficam aqui, não na aplicação)
+#   - padroniza o acesso (uma API só, formato OpenAI)
+#   - registra o uso
+#   - centraliza a configuração
+#
+# Os valores "os.environ/..." vêm do .env da raiz (o iniciar_proxy.sh carrega).
+# Provedor sem chave no .env responde com erro 401 (o cliente mostra e segue).
+
+model_list:
+  - model_name: chatgpt                        # nome que a aplicação usa
+    litellm_params:
+      model: os.environ/LITELLM_MODELO_OPENAI  # modelo real (openai/...)
+      api_key: os.environ/OPENAI_API_KEY       # chave REAL: só o proxy conhece
+
+  - model_name: gemini
+    litellm_params:
+      model: os.environ/LITELLM_MODELO_GEMINI
+      api_key: os.environ/GEMINI_API_KEY
+
+litellm_settings:
+  drop_params: true   # descarta parâmetros que um provedor não aceita
+
+general_settings:
+  # A aplicação precisa mandar esta chave como Bearer Token.
+  master_key: os.environ/LITELLM_MASTER_KEY
