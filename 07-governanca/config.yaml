@@ -1,0 +1,33 @@
+# Nota AI Gateways → "Governança mínima - acesso, custo e limites"
+#                  + "Camada de IA compartilhada com governança"
+#
+# Duas capacidades com riscos e custos diferentes:
+#   classificacao-simples → modelo SECUNDÁRIO (o barato) → limite alto, mais permissivo
+#   analise-critica       → modelo PRINCIPAL  (o caro)   → limite baixo, controle rigoroso
+# (com ChatGPT e Gemini no .env: secundário = Gemini, principal = ChatGPT;
+#  com só um deles, os dois apontam para o mesmo provedor)
+#
+# Quem pode usar o quê, com qual orçamento e limite, é definido pelas
+# VIRTUAL KEYS (criadas pelo criar_virtual_keys.py), não neste arquivo.
+#
+# Lembrete da nota: o gateway REGISTRA, BLOQUEIA e CONTROLA, mas NÃO DEFINE
+# os limites sozinho. Os números vêm de políticas da organização, produto,
+# orçamento/finanças e risco/conformidade.
+
+model_list:
+  - model_name: classificacao-simples
+    litellm_params:
+      model: os.environ/MODELO_SECUNDARIO
+      api_key: os.environ/CHAVE_SECUNDARIO
+
+  - model_name: analise-critica
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY    # chave do ADMIN: só ela cria virtual keys
+  database_url: os.environ/DATABASE_URL        # o banco guarda keys, gastos e logs

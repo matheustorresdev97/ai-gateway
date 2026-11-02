@@ -1,0 +1,38 @@
+# Gateway com banco de dados: necessário para VIRTUAL KEYS, orçamento e logs de uso.
+# Suba com:  ./iniciar_gateway.sh   (ele carrega o .env da raiz)
+
+services:
+  banco:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm
+      POSTGRES_DB: litellm
+    volumes:
+      - dados_banco:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 3s
+      retries: 20
+
+  gateway:
+    image: ghcr.io/berriai/litellm:main-stable
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      DATABASE_URL: postgresql://litellm:litellm@banco:5432/litellm
+      # Os valores abaixo vêm do terminal (o iniciar_gateway.sh calcula a partir do .env).
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      MODELO_PRINCIPAL: ${MODELO_PRINCIPAL}
+      CHAVE_PRINCIPAL: ${CHAVE_PRINCIPAL}
+      MODELO_SECUNDARIO: ${MODELO_SECUNDARIO}
+      CHAVE_SECUNDARIO: ${CHAVE_SECUNDARIO}
+    depends_on:
+      banco:
+        condition: service_healthy
+
+volumes:
+  dados_banco:

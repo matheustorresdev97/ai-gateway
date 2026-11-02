@@ -1,0 +1,57 @@
+# Nota AI Gateways → "Resiliência - timeout, retry e fallback"
+#
+# Decisão arquitetural (nota): centralizar resiliência no gateway.
+# Os clientes ficam simples; timeout, retry e fallback moram aqui.
+#
+# TIMEOUT é uma política, não um número aleatório:
+#   | caso de uso      | tempo aceitável |
+#   | atendimento      | rápido          |  → timeout: 5
+#   | análise longa    | mais tempo      |  → timeout: 120
+#
+# Para a demonstração, cada caso tem um "principal" com problema:
+#   - atendimento   → provedor LENTO (provedor_simulado.py): estoura o timeout
+#   - analise-longa → provedor FORA DO AR (porta sem ninguém escutando)
+# e um fallback que funciona: um provider REAL (ChatGPT ou Gemini, do .env).
+
+model_list:
+  # ----- atendimento: precisa ser rápido -----
+  - model_name: atendimento
+    litellm_params:
+      model: openai/provedor-lento
+      api_base: http://127.0.0.1:4010/v1   # provedor_simulado.py
+      api_key: chave-falsa
+      timeout: 5                           # política: atendimento é rápido
+
+  - model_name: atendimento-reserva        # fallback: OUTRO PROVIDER (real)
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 30
+
+  # ----- análise longa: pode demorar mais -----
+  - model_name: analise-longa
+    litellm_params:
+      model: openai/provedor-fora-do-ar
+      api_base: http://127.0.0.1:4011/v1   # ninguém escuta aqui: provedor caiu
+      api_key: chave-falsa
+      timeout: 120                         # política: análise longa tem mais tempo
+
+  - model_name: analise-longa-reserva      # fallback: OUTRO PROVIDER (real)
+    litellm_params:
+      model: os.environ/MODELO_SECUNDARIO
+      api_key: os.environ/CHAVE_SECUNDARIO
+      timeout: 120
+
+router_settings:
+  # RETRY com limite: cada nova tentativa custa latência, dinheiro e pressão no provider.
+  num_retries: 1
+  # ÁRVORE DE FALLBACK: se o grupo principal falhar, tenta o caminho alternativo.
+  fallbacks:
+    - atendimento: ["atendimento-reserva"]
+    - analise-longa: ["analise-longa-reserva"]
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
