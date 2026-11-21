@@ -1,0 +1,50 @@
+# Nota Cache → "Camadas de cache em aplicações com IA"
+#
+# Capacidades desta pasta:
+#
+#   | capacidade            | usada em        | para quê                                         |
+#   | classificacao-tickets | 1, 2, 3, 4      | o analisador de tickets (resposta em JSON)       |
+#   | embedding             | 3, 4            | transformar perguntas em vetores (cache semântico)|
+#   | explicacao            | 5               | demonstrar o cache NO GATEWAY                    |
+#   | politicas             | 6               | prompt longo para o prompt caching do PROVEDOR   |
+#
+# Cache no gateway (exemplo 5): ligado, mas em modo "default_off". Nenhuma
+# chamada é cacheada aqui, a não ser que a requisição peça com
+# {"cache": {"use-cache": true}}. Assim os exemplos 1 a 4 mostram só o cache
+# da APLICAÇÃO, e o 5 mostra o do gateway isolado.
+
+model_list:
+  - model_name: classificacao-tickets
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 30
+
+  - model_name: embedding
+    litellm_params:
+      model: os.environ/MODELO_EMBEDDING
+      api_key: os.environ/CHAVE_EMBEDDING
+      timeout: 30
+
+  - model_name: explicacao
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 60
+
+  - model_name: politicas
+    litellm_params:
+      model: os.environ/MODELO_PRINCIPAL
+      api_key: os.environ/CHAVE_PRINCIPAL
+      timeout: 60
+
+litellm_settings:
+  drop_params: true
+  cache: true
+  cache_params:
+    type: local          # em memória do gateway (em produção: redis, compartilhado entre réplicas)
+    ttl: 600             # 10 minutos
+    mode: default_off    # opt-in por requisição
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

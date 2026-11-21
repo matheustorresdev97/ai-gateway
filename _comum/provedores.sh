@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Carrega o .env e decide quais provedores o gateway vai usar.
-# Usado por iniciar_proxy.sh (pastas 04-06) e iniciar_gateway.sh (pasta 07).
+# Usado por iniciar_proxy.sh (pastas 04-06, 08 e 09) e iniciar_gateway.sh (pasta 07).
 #
 # Os config.yaml das pastas 05, 06 e 07 falam em modelo PRINCIPAL e SECUNDÁRIO:
 #   - ChatGPT e Gemini preenchidos → principal = ChatGPT, secundário = Gemini
@@ -36,6 +36,14 @@ else
   export MODELO_SECUNDARIO="$LITELLM_MODELO_OPENAI" CHAVE_SECUNDARIO="$OPENAI_API_KEY"
 fi
 
+# Modelo de embedding (pasta 09, cache semântico): o do provedor principal.
+if $TEM_OPENAI; then
+  export MODELO_EMBEDDING="openai/text-embedding-3-small" CHAVE_EMBEDDING="$OPENAI_API_KEY"
+else
+  export MODELO_EMBEDDING="gemini/gemini-embedding-001" CHAVE_EMBEDDING="$GEMINI_API_KEY"
+fi
+
 echo "🔌 Provedores: ChatGPT=$($TEM_OPENAI && echo sim || echo não) | Gemini=$($TEM_GEMINI && echo sim || echo não)"
 echo "   modelo principal  → $MODELO_PRINCIPAL"
 echo "   modelo secundário → $MODELO_SECUNDARIO"
+echo "   modelo embedding  → $MODELO_EMBEDDING   (usado só na pasta 09)"

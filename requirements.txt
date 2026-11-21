@@ -1,2 +1,3 @@
 openai
 litellm[proxy]
+psycopg[binary]

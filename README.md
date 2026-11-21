@@ -1,6 +1,6 @@
 # Exemplos — AI Gateways
 
-Exemplos práticos das notas **AI Gateways** e **Fluxos de Chamada**.
+Exemplos práticos das notas **AI Gateways**, **Fluxos de Chamada** e **Cache**.
 
 Cada pasta é um degrau da **"Evolução do módulo de integração com IA"**, do simples ao robusto:
 
@@ -10,6 +10,7 @@ Cada pasta é um degrau da **"Evolução do módulo de integração com IA"**, d
                  ao provedor      (1 API, N modelos)   (serviço separado)  nomes lógicos     fallback            limites, custo, logs
 
 08 fluxos de chamada: com o gateway pronto, COMO executar cada chamada (síncrono, streaming ou job assíncrono)
+09 cache: SE a chamada precisa acontecer (cache da aplicação e do gateway) e como baratear a que acontece (provedor)
 ```
 
 | Pasta | Seção da nota | O que você vê | Provedor |
@@ -22,6 +23,7 @@ Cada pasta é um degrau da **"Evolução do módulo de integração com IA"**, d
 | `06-resiliencia` | Resiliência: timeout, retry e fallback | Provedor lento e provedor fora do ar, e o gateway contornando | ChatGPT e/ou Gemini |
 | `07-governanca` | Virtual Key / Rate limiting & cost control / Governança mínima | App A, B e C com acessos, limites e gastos diferentes | ChatGPT e/ou Gemini |
 | `08-fluxos-de-chamada` | Nota **Fluxos de Chamada**: síncrono, streaming e job assíncrono | Timeout de request longa, TTFT do streaming vs. síncrono, fila + worker + retry + DLQ | ChatGPT e/ou Gemini |
+| `09-cache` | Nota **Cache**: cache-aside, fingerprint, TTL, cache semântico, camadas e prompt caching | Hit em milissegundos, stampede contido, pgvector com threshold, cache do gateway e `cached_tokens` do provedor | ChatGPT e/ou Gemini |
 
 ## O que é um AI Gateway
 
@@ -45,7 +47,7 @@ Mais do que a ferramenta, os exemplos demonstram decisões de arquitetura:
 - **Retry tem custo:** cada tentativa acrescenta latência e gasto, além de pressionar um provedor que já está com problemas.
 - **O gateway não decide os limites sozinho:** os números vêm de produto, finanças e risco.
 
-**Todas as chamadas são reais.** As pastas 01 e 02 precisam da chave do ChatGPT. As pastas 03 a 08 funcionam com a chave do **ChatGPT, do Gemini ou das duas**.
+**Todas as chamadas são reais.** As pastas 01 e 02 precisam da chave do ChatGPT. As pastas 03 a 09 funcionam com a chave do **ChatGPT, do Gemini ou das duas**.
 
 ## 1. Preparar (uma vez)
 
@@ -72,7 +74,7 @@ LITELLM_MASTER_KEY=sk-mestre-troque-isto   # você inventa; é a chave de admin 
 
 Deixe `COLE_...` no provedor que não for usar.
 
-**Como os gateways (04 a 08) usam as chaves:** o script de início define um modelo **principal** e um **secundário** e mostra o mapeamento ao subir.
+**Como os gateways (04 a 09) usam as chaves:** o script de início define um modelo **principal** e um **secundário** e mostra o mapeamento ao subir.
 
 | Chaves no `.env` | Principal | Secundário |
 |---|---|---|
@@ -96,7 +98,7 @@ Cada chamada destes exemplos usa poucas centenas de tokens, então o custo por e
 
 Cada pasta tem um `README.md` com os comandos. Os proxies usam a porta **4000**: rode **um por vez** (Ctrl+C para parar antes de ir para a próxima pasta).
 
-A pasta 07 precisa de **Docker** (gateway + banco Postgres para guardar keys, gastos e logs).
+A pasta 07 precisa de **Docker** (gateway + banco Postgres para guardar keys, gastos e logs). A pasta 09 usa Docker só para o banco vetorial (pgvector) do cache semântico.
 
 ⚠️ Não compartilhe o `.env` com chaves preenchidas.
 
@@ -111,13 +113,15 @@ A pasta 07 precisa de **Docker** (gateway + banco Postgres para guardar keys, ga
 - Uma chamada **síncrona longa** estourando o timeout, enquanto a curta volta rápido.
 - O **streaming** mostrando texto em menos de um segundo, com tempo total parecido ao síncrono.
 - **Jobs** respondendo na hora, sendo processados em background, com retry, DLQ e pedido duplicado ignorado.
+- O **cache** respondendo em milissegundos, a troca de versão do prompt invalidando a chave sozinha, 8 chamadas iguais virando 1 e o **threshold** do cache semântico separando (ou não) intenções parecidas.
+- O **prompt caching** do provedor lendo ~98% da entrada do cache e zerando quando a hora entra no topo do prompt.
 
 ## Tecnologias
 
 - **Python 3.10+**: exemplos e clientes.
 - **[LiteLLM](https://docs.litellm.ai/)**: biblioteca de compatibilidade e proxy (o gateway).
 - **SDK da OpenAI**: usado para falar diretamente com a OpenAI e, apontado para o gateway, com qualquer provedor.
-- **Docker e PostgreSQL**: banco do gateway para virtual keys, gastos e logs (exemplo 07).
+- **Docker e PostgreSQL**: banco do gateway para virtual keys, gastos e logs (exemplo 07) e banco vetorial com **pgvector** (exemplo 09).
 - **Provedores:** OpenAI (ChatGPT) e Google (Gemini). Funciona com a chave de qualquer um dos dois.
 
 ## Escopo
